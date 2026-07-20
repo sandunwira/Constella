@@ -45,6 +45,7 @@ export default function HomeScreen() {
           <Link.Preview />
           <Link.Menu>
             <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
+			<Link.MenuAction title="Link" icon="link" onPress={() => alert('Link pressed')} />
             <Link.MenuAction
               title="Share"
               icon="square.and.arrow.up"
