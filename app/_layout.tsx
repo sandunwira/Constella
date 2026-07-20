@@ -1,27 +1,36 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import '../global.css';
 
 import { AudioProvider } from '@/contexts/audio-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { DbProvider } from '@/contexts/db-context';
+import { JellyfinProvider } from '@/contexts/jellyfin-context';
 
 export const unstable_settings = {
 	anchor: '(tabs)',
 };
 
 export default function RootLayout() {
-	const colorScheme = useColorScheme();
-
 	return (
-		<AudioProvider>
-			<ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-				<Stack>
-					<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-				</Stack>
-				<StatusBar style="auto" />
-			</ThemeProvider>
-		</AudioProvider>
+		<DbProvider>
+			<JellyfinProvider>
+				<AudioProvider>
+					<Stack>
+						<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+						<Stack.Screen
+							name="player"
+							options={{
+								headerShown: false,
+								presentation: 'modal',
+								animation: 'slide_from_bottom',
+								gestureEnabled: true,
+							}}
+						/>
+					</Stack>
+					<StatusBar style="light" />
+				</AudioProvider>
+			</JellyfinProvider>
+		</DbProvider>
 	);
 }

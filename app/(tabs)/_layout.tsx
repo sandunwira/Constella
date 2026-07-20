@@ -1,58 +1,79 @@
+import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Platform, StyleSheet } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { TabIcon } from '@/components/ui/tab-icon';
 
 export default function TabLayout() {
-	const colorScheme = useColorScheme();
-	const isDark = colorScheme === 'dark';
-
 	return (
 		<Tabs
 			screenOptions={{
 				headerShown: false,
-				tabBarActiveTintColor: isDark ? '#fff' : '#0a7ea4',
-				tabBarInactiveTintColor: isDark ? '#9BA1A6' : '#687076',
-				tabBarStyle: {
-					backgroundColor: isDark ? '#151718' : '#fff',
-					borderTopColor: isDark ? '#2a2a2a' : '#e5e5e5',
-				},
+				tabBarActiveTintColor: '#FFFFFF',
+				tabBarInactiveTintColor: '#636366',
 				tabBarButton: HapticTab,
+				tabBarLabelStyle: {
+					fontSize: 10,
+					fontWeight: '600',
+					letterSpacing: 0.3,
+					marginBottom: 2,
+				},
+				tabBarStyle: {
+					position: 'absolute',
+					bottom: 0,
+					left: 0,
+					right: 0,
+					height: Platform.OS === 'ios' ? 82 : 66,
+					backgroundColor: 'transparent',
+					borderTopWidth: 0,
+					elevation: 0,
+				},
+				tabBarBackground: () => (
+					<BlurView
+						tint="dark"
+						intensity={100}
+						style={StyleSheet.absoluteFill}
+					/>
+				),
 			}}>
+
 			<Tabs.Screen
 				name="index"
 				options={{
 					title: 'Home',
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="home" size={size} color={color} />
+					tabBarIcon: ({ color, focused }) => (
+						<TabIcon name={focused ? 'home' : 'home-outline'} color={color} />
 					),
 				}}
 			/>
+
 			<Tabs.Screen
 				name="collections"
 				options={{
 					title: 'Collections',
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="albums" size={size} color={color} />
+					tabBarIcon: ({ color, focused }) => (
+						<TabIcon name={focused ? 'albums' : 'albums-outline'} color={color} />
 					),
 				}}
 			/>
+
 			<Tabs.Screen
 				name="downloads"
 				options={{
 					title: 'Downloads',
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="download" size={size} color={color} />
+					tabBarIcon: ({ color, focused }) => (
+						<TabIcon name={focused ? 'arrow-down-circle' : 'arrow-down-circle-outline'} color={color} />
 					),
 				}}
 			/>
+
 			<Tabs.Screen
 				name="settings"
 				options={{
 					title: 'Settings',
-					tabBarIcon: ({ color, size }) => (
-						<Ionicons name="settings" size={size} color={color} />
+					tabBarIcon: ({ color, focused }) => (
+						<TabIcon name={focused ? 'settings' : 'settings-outline'} color={color} />
 					),
 				}}
 			/>
