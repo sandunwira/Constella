@@ -3,14 +3,14 @@
   <p>A Jellyfin music client built with Expo and React Native</p>
 </div>
 
-## Features
+### Features
 
 - Multi‑server & multi‑library support
 - Playback and queue management
 - Library and browsing
 - Offline and caching
 
-## Development
+### Development
 
 1. Install dependencies
 
@@ -33,6 +33,6 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## License
+### License
 
 MIT License. See [LICENSE](LICENSE) for details.
