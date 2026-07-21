@@ -1,5 +1,5 @@
 /**
- * FeaturedCard — Hero card with gradient
+ * FeaturedCard — Hero card with gradient (Framer-style gradient spotlight card)
  */
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,37 +18,40 @@ export function FeaturedCard({ label, title, subtitle, onPress, width }: Props) 
 	return (
 		<Pressable
 			onPress={onPress}
-			className="rounded-2xl overflow-hidden justify-end"
+			className="overflow-hidden justify-end"
 			style={{
 				width,
 				height: 200,
+				borderRadius: 30,
 				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 8 },
-				shadowOpacity: 0.4,
-				shadowRadius: 20,
-				elevation: 12,
+				shadowOffset: { width: 0, height: 10 },
+				shadowOpacity: 0.25,
+				shadowRadius: 30,
+				elevation: 10,
 			}}>
 			<LinearGradient
-				colors={['#1C1C1E', '#121213']}
+				colors={['#7C4DFF', '#0A0A0B']}
 				start={{ x: 0, y: 0 }}
 				end={{ x: 1, y: 1 }}
 				style={StyleSheet.absoluteFill}
 			/>
-			<View className="p-6 gap-2.5">
-				<View className="self-start px-3 py-[5px] rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
-					<Text className="text-muted text-[10px] font-semibold tracking-widest uppercase">
+			<View className="p-8 gap-3">
+				<View className="self-start px-md py-[5px] rounded-pill bg-white/10">
+					<Text className="text-ink text-2xs font-medium tracking-wider uppercase">
 						{label}
 					</Text>
 				</View>
 
-				<View className="w-10 h-10 rounded-[10px] items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+				<View className="w-10 h-10 rounded-md items-center justify-center bg-white/5">
 					<Ionicons name="sparkles" size={22} color="#FFFFFF" />
 				</View>
 
-				<Text className="text-white text-xl font-bold" numberOfLines={2} style={{ letterSpacing: -0.5, lineHeight: 24 }}>
+				<Text
+					className="text-ink text-subhead font-medium"
+					numberOfLines={2}>
 					{title}
 				</Text>
-				<Text className="text-muted text-[13px]" numberOfLines={1} style={{ lineHeight: 18 }}>
+				<Text className="text-ink-muted text-body-sm" numberOfLines={1}>
 					{subtitle}
 				</Text>
 			</View>

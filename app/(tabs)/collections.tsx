@@ -11,7 +11,6 @@ import {
 	Pressable,
 	RefreshControl,
 	ScrollView,
-	StyleSheet,
 	Text,
 	View,
 } from 'react-native';
@@ -24,7 +23,6 @@ import { NowPlayingBar } from '@/components/mini-player';
 import { SearchBar } from '@/components/search-bar';
 import { TrackItem } from '@/components/track-item';
 
-import { Colors } from '@/constants/colors';
 import { useAudio } from '@/contexts/audio-context';
 import { useJellyfin } from '@/contexts/jellyfin-context';
 import { jellyfinClient } from '@/lib/jellyfin/client';
@@ -32,9 +30,13 @@ import type { JellyfinItem } from '@/lib/jellyfin/types';
 
 type BrowseTab = 'Libraries' | 'Artists' | 'Albums' | 'Tracks' | 'Playlists';
 
+const ALBUM_CARD_W = (Dimensions.get('window').width - 48) / 2;
+
 export default function CollectionsScreen() {
 	const { isConnected, libraries, activeLibraryId, setActiveLibrary } = useJellyfin();
 	const { playTrack, currentTrack } = useAudio();
+
+	const activeLibraryName = libraries.find((l) => l.Id === activeLibraryId)?.Name ?? 'Library';
 
 	const [activeTab, setActiveTab] = useState<BrowseTab>('Libraries');
 	const [searchText, setSearchText] = useState('');
@@ -46,8 +48,6 @@ export default function CollectionsScreen() {
 
 	const PAGE_SIZE = 40;
 
-	// ── Load data by tab ─────────────────────────────────────────────────────
-
 	const loadItems = useCallback(async (tab: BrowseTab, reset = true) => {
 		if (!isConnected) return;
 		const startIndex = reset ? 0 : page * PAGE_SIZE;
@@ -56,7 +56,6 @@ export default function CollectionsScreen() {
 			let result: JellyfinItem[] = [];
 
 			if (tab === 'Libraries') {
-				// Library cards are already loaded via context
 				setItems([]);
 				setLoading(false);
 				return;
@@ -110,8 +109,6 @@ export default function CollectionsScreen() {
 		setRefreshing(false);
 	}, [activeTab, loadItems]);
 
-	// ── Search ────────────────────────────────────────────────────────────────
-
 	useEffect(() => {
 		if (!searchText.trim() || !isConnected) return;
 		const timer = setTimeout(async () => {
@@ -125,15 +122,13 @@ export default function CollectionsScreen() {
 		return () => clearTimeout(timer);
 	}, [searchText, isConnected]);
 
-	// ── Render helpers ────────────────────────────────────────────────────────
-
 	const renderLibraries = () => {
 		const musicLibraries = libraries.filter(
 			(lib) => lib.CollectionType?.toLowerCase() === 'music' || lib.Type?.toLowerCase().includes('music')
 		);
 
 		return (
-			<View style={styles.libraryList}>
+			<View className="gap-2.5">
 				{musicLibraries.map((lib) => (
 					<LibraryCard
 						key={lib.Id}
@@ -147,9 +142,9 @@ export default function CollectionsScreen() {
 					/>
 				))}
 				{musicLibraries.length === 0 && (
-					<View style={styles.emptyState}>
-						<Text style={styles.emptyText}>No music libraries found</Text>
-						<Text style={styles.emptyHint}>Add a music library in your Jellyfin server.</Text>
+					<View className="flex-1 items-center justify-center gap-4 px-8">
+						<Text className="text-ink text-headline font-medium">No music libraries found</Text>
+						<Text className="text-ink-muted text-body-sm text-center leading-5">Add a music library in your Jellyfin server.</Text>
 					</View>
 				)}
 			</View>
@@ -169,7 +164,7 @@ export default function CollectionsScreen() {
 	);
 
 	const renderAlbumItem = ({ item }: { item: JellyfinItem }) => (
-		<View style={styles.albumGridItem}>
+		<View className="flex-1" style={{ width: ALBUM_CARD_W }}>
 			<AlbumCard
 				id={item.Id}
 				title={item.Name}
@@ -180,7 +175,7 @@ export default function CollectionsScreen() {
 						: undefined
 				}
 				year={item.ProductionYear}
-				size={styles.albumGridItem.width as number}
+				size={ALBUM_CARD_W}
 			/>
 		</View>
 	);
@@ -200,7 +195,7 @@ export default function CollectionsScreen() {
 			}}
 			index={index}
 			isActive={currentTrack?.id === item.Id}
-			onPress={() => {
+			onPress={async () => {
 				const track = {
 					id: item.Id,
 					title: item.Name,
@@ -212,12 +207,37 @@ export default function CollectionsScreen() {
 						: undefined,
 					durationMs: item.RunTimeTicks ? item.RunTimeTicks / 10000 : undefined,
 				};
-				playTrack(track, items.map((i) => ({
-					id: i.Id,
-					title: i.Name,
-					artist: i.Artists?.[0] ?? i.AlbumArtist ?? 'Unknown',
-					uri: jellyfinClient.getStreamUrl(i.Id),
-				})));
+
+				// Fetch all tracks for full queue
+				let trackList: typeof track[];
+				if (activeLibraryId) {
+					const allItems = await jellyfinClient.getAllLibraryTracks(activeLibraryId);
+					trackList = allItems.map((i) => ({
+						id: i.Id,
+						title: i.Name,
+						artist: i.Artists?.[0] ?? i.AlbumArtist ?? 'Unknown',
+						album: i.Album,
+						uri: jellyfinClient.getStreamUrl(i.Id),
+						artwork: i.ImageTags?.Primary
+							? jellyfinClient.getImageUrl(i.Id)
+							: undefined,
+						durationMs: i.RunTimeTicks ? i.RunTimeTicks / 10000 : undefined,
+					}));
+				} else {
+					trackList = items.map((i) => ({
+						id: i.Id,
+						title: i.Name,
+						artist: i.Artists?.[0] ?? i.AlbumArtist ?? 'Unknown',
+						album: i.Album,
+						uri: jellyfinClient.getStreamUrl(i.Id),
+						artwork: i.ImageTags?.Primary
+							? jellyfinClient.getImageUrl(i.Id)
+							: undefined,
+						durationMs: i.RunTimeTicks ? i.RunTimeTicks / 10000 : undefined,
+					}));
+				}
+
+				playTrack(track, trackList, activeLibraryName);
 			}}
 		/>
 	);
@@ -236,20 +256,22 @@ export default function CollectionsScreen() {
 	);
 
 	return (
-		<View style={styles.bg}>
-			<SafeAreaView style={styles.safe} edges={['top']}>
+		<View className="flex-1 bg-canvas">
+			<SafeAreaView className="flex-1" edges={['top']}>
 				{/* ── Header ────────────────────────────────────────────── */}
-				<View style={styles.header}>
+				<View className="px-5 pt-1 pb-[14px] flex-row items-center gap-3">
 					{activeTab !== 'Libraries' && (
-						<Pressable onPress={() => setActiveTab('Libraries')} style={styles.backButton}>
-							<Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+						<Pressable onPress={() => setActiveTab('Libraries')} className="p-1">
+							<Ionicons name="arrow-back" size={24} color="#FFFFFF" />
 						</Pressable>
 					)}
-					<Text style={styles.title}>{activeTab === 'Libraries' ? 'Collections' : 'Tracks'}</Text>
+					<Text className="text-ink text-display-md font-medium">
+						{activeTab === 'Libraries' ? 'Collections' : activeLibraryName}
+					</Text>
 				</View>
 
 				{/* ── Search ────────────────────────────────────────────── */}
-				<View style={styles.searchWrap}>
+				<View className="px-4 mb-[14px]">
 					<SearchBar
 						value={searchText}
 						onChangeText={setSearchText}
@@ -260,23 +282,23 @@ export default function CollectionsScreen() {
 
 				{/* ── Content ────────────────────────────────────────────── */}
 				{!isConnected ? (
-					<View style={styles.emptyState}>
-						<Text style={styles.emptyIcon}>🔌</Text>
-						<Text style={styles.emptyText}>No server connected</Text>
-						<Text style={styles.emptyHint}>Go to Settings to connect your Jellyfin server.</Text>
+					<View className="flex-1 items-center justify-center gap-4 px-8">
+						<Text className="text-[48px]">🔌</Text>
+						<Text className="text-ink text-headline font-medium">No server connected</Text>
+						<Text className="text-ink-muted text-body-sm text-center leading-5">Go to Settings to connect your Jellyfin server.</Text>
 					</View>
 				) : loading && items.length === 0 ? (
-					<View style={styles.emptyState}>
-						<ActivityIndicator color={Colors.text.primary} size="large" />
+					<View className="flex-1 items-center justify-center">
+						<ActivityIndicator color="#FFFFFF" size="large" />
 					</View>
 				) : activeTab === 'Libraries' ? (
 					<ScrollView
-						contentContainerStyle={styles.libraryScroll}
+						className="flex-1 p-4"
 						refreshControl={
-							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.text.primary} />
+							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
 						}>
 						{renderLibraries()}
-						<View style={{ height: 180 }} />
+						<View className="h-[180px]" />
 					</ScrollView>
 				) : activeTab === 'Artists' ? (
 					<FlatList
@@ -285,15 +307,15 @@ export default function CollectionsScreen() {
 						keyExtractor={(i) => i.Id}
 						horizontal={false}
 						numColumns={3}
-						columnWrapperStyle={styles.artistRow}
-						contentContainerStyle={styles.listContent}
+						columnWrapperStyle={{ gap: 20, marginBottom: 24, paddingHorizontal: 16, justifyContent: 'flex-start' }}
+						contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 4 }}
 						renderItem={({ item }) => renderArtistItem({ item })}
 						onEndReached={() => hasMore && loadItems(activeTab, false)}
 						onEndReachedThreshold={0.3}
 						refreshControl={
-							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.text.primary} />
+							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
 						}
-						ListFooterComponent={<View style={{ height: 180 }} />}
+						ListFooterComponent={<View className="h-[180px]" />}
 					/>
 				) : activeTab === 'Albums' || activeTab === 'Playlists' ? (
 					<FlatList
@@ -301,15 +323,15 @@ export default function CollectionsScreen() {
 						data={items}
 						keyExtractor={(i) => i.Id}
 						numColumns={2}
-						columnWrapperStyle={styles.albumRow}
-						contentContainerStyle={styles.listContent}
+						columnWrapperStyle={{ gap: 14, marginBottom: 18, paddingHorizontal: 16 }}
+						contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 4 }}
 						renderItem={activeTab === 'Albums' ? renderAlbumItem : renderPlaylistItem}
 						onEndReached={() => hasMore && loadItems(activeTab, false)}
 						onEndReachedThreshold={0.3}
 						refreshControl={
-							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.text.primary} />
+							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
 						}
-						ListFooterComponent={<View style={{ height: 180 }} />}
+						ListFooterComponent={<View className="h-[180px]" />}
 					/>
 				) : (
 					<FlatList
@@ -317,13 +339,13 @@ export default function CollectionsScreen() {
 						data={items}
 						keyExtractor={(i, idx) => `${i.Id}-${idx}`}
 						renderItem={renderTrackItem}
-						contentContainerStyle={styles.listContent}
+						contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 4 }}
 						onEndReached={() => hasMore && loadItems(activeTab, false)}
 						onEndReachedThreshold={0.3}
 						refreshControl={
-							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.text.primary} />
+							<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
 						}
-						ListFooterComponent={<View style={{ height: 180 }} />}
+						ListFooterComponent={<View className="h-[180px]" />}
 					/>
 				)}
 
@@ -332,75 +354,3 @@ export default function CollectionsScreen() {
 		</View>
 	);
 }
-
-const ALBUM_CARD_W = (Dimensions.get('window').width - 48) / 2;
-
-const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: Colors.background.primary },
-	safe: { flex: 1 },
-	header: {
-		paddingHorizontal: 20,
-		paddingTop: 4,
-		paddingBottom: 14,
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12,
-	},
-	backButton: {
-		padding: 4,
-	},
-	title: {
-		color: Colors.text.primary,
-		fontSize: 30,
-		fontWeight: '800',
-		letterSpacing: -1,
-	},
-	searchWrap: {
-		paddingHorizontal: 16,
-		marginBottom: 14,
-	},
-	listContent: {
-		paddingHorizontal: 12,
-		paddingTop: 4,
-	},
-	albumRow: {
-		gap: 14,
-		marginBottom: 18,
-		paddingHorizontal: 16,
-	},
-	albumGridItem: {
-		flex: 1,
-		width: ALBUM_CARD_W,
-	},
-	artistRow: {
-		gap: 20,
-		marginBottom: 24,
-		paddingHorizontal: 16,
-		justifyContent: 'flex-start',
-	},
-	libraryScroll: {
-		padding: 16,
-	},
-	libraryList: {
-		gap: 10,
-	},
-	emptyState: {
-		flex: 1,
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 16,
-		paddingHorizontal: 32,
-	},
-	emptyIcon: { fontSize: 48 },
-	emptyText: {
-		color: Colors.text.primary,
-		fontSize: 18,
-		fontWeight: '700',
-	},
-	emptyHint: {
-		color: Colors.text.secondary,
-		fontSize: 14,
-		textAlign: 'center',
-		lineHeight: 20,
-	},
-});

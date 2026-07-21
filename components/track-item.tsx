@@ -21,9 +21,9 @@ export function TrackItem({ track, index, isActive, onPress, onLongPress, card }
 		<Pressable
 			onPress={onPress}
 			onLongPress={onLongPress}
-			className={`flex-row items-center border-b border-border ${card ? 'py-3 px-3.5 gap-3.5 rounded-[14px] bg-card border' : 'py-[11px] pl-4 pr-5 gap-3 border-border'}`}
-			style={({ pressed }) => pressed && { backgroundColor: card ? '#2C2C2E' : '#1C1C1E' }}>
-			<View className={`items-center justify-center overflow-hidden bg-ink-700 ${card ? 'w-[52px] h-[52px] rounded-[10px]' : 'w-10 h-10 rounded-[6px]'}`}>
+			className={`flex-row items-center ${card ? 'py-3 px-[14px] gap-[14px] rounded-lg bg-surface-1' : 'py-[11px] px-4 gap-3 border-b border-hairline/50'}`}
+			style={({ pressed }) => pressed && { backgroundColor: card ? '#2C2C2E' : '#1A1A1C' }}>
+			<View className={`items-center justify-center overflow-hidden bg-surface-2 ${card ? 'w-[52px] h-[52px] rounded-[10px]' : 'w-10 h-10 rounded-sm'}`}>
 				{track.artwork ? (
 					<Image
 						source={{ uri: track.artwork }}
@@ -32,25 +32,24 @@ export function TrackItem({ track, index, isActive, onPress, onLongPress, card }
 						transition={200}
 					/>
 				) : (
-					<Ionicons name="musical-note" size={card ? 20 : 16} color="#636366" />
+					<Ionicons name="musical-note" size={card ? 20 : 16} color="#999999" />
 				)}
 			</View>
 
 			<View className="flex-1 gap-0.5">
 				<Text
-					className={`text-white ${card ? 'text-[15px] font-semibold' : 'text-[15px] font-medium'}`}
-					style={{ letterSpacing: -0.3 }}
+					className={`text-ink ${card ? 'text-body font-medium' : 'text-body'}`}
 					numberOfLines={1}>
 					{track.title}
 				</Text>
-				<Text className="text-muted text-[13px]" style={{ letterSpacing: -0.1 }} numberOfLines={1}>
+				<Text className="text-ink-muted text-caption" numberOfLines={1}>
 					{track.artist}
 					{track.album ? ` · ${track.album}` : ''}
 				</Text>
 			</View>
 
 			<Pressable hitSlop={8} onPress={() => { }} className="p-1">
-				<Ionicons name="ellipsis-horizontal" size={18} color="#636366" />
+				<Ionicons name="ellipsis-horizontal" size={18} color="#999999" />
 			</Pressable>
 		</Pressable>
 	);

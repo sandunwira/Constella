@@ -14,14 +14,14 @@ type Props = {
 
 export function SearchBar({ value, onChangeText, placeholder = 'Search…', onClear }: Props) {
 	return (
-		<View className="flex-row items-center bg-card rounded-xl px-3.5 py-[11px] gap-2.5 border border-border">
-			<Ionicons name="search" size={18} color="#636366" />
+		<View className="flex-row items-center bg-surface-1 rounded-md px-[14px] py-[11px] gap-2.5 border border-hairline/50">
+			<Ionicons name="search" size={18} color="#999999" />
 			<TextInput
 				value={value}
 				onChangeText={onChangeText}
 				placeholder={placeholder}
-				placeholderTextColor="#636366"
-				className="flex-1 text-white text-[15px]"
+				placeholderTextColor="#999999"
+				className="flex-1 text-ink text-body"
 				style={{ padding: 0 }}
 				returnKeyType="search"
 				autoCorrect={false}
@@ -29,7 +29,7 @@ export function SearchBar({ value, onChangeText, placeholder = 'Search…', onCl
 			/>
 			{value.length > 0 && (
 				<Pressable onPress={onClear} hitSlop={8}>
-					<Ionicons name="close-circle" size={18} color="#636366" />
+					<Ionicons name="close-circle" size={18} color="#999999" />
 				</Pressable>
 			)}
 		</View>

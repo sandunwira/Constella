@@ -30,6 +30,8 @@ export class JellyfinClient {
 	private baseUrl: string = '';
 	private accessToken: string = '';
 	private userId: string = '';
+	private tracksCache: Map<string, { data: JellyfinItem[]; timestamp: number }> = new Map();
+	private static CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 	// ── Connection ────────────────────────────────────────────────────────────
 
@@ -184,6 +186,42 @@ export class JellyfinClient {
 			StartIndex: String(params.startIndex ?? 0),
 		});
 		return this.request<JellyfinQueryResult>(`/Items?${qs}`);
+	}
+
+	async getAllLibraryTracks(libraryId: string, forceRefresh = false): Promise<JellyfinItem[]> {
+		// Check cache first
+		if (!forceRefresh) {
+			const cached = this.tracksCache.get(libraryId);
+			if (cached && Date.now() - cached.timestamp < JellyfinClient.CACHE_TTL) {
+				return cached.data;
+			}
+		}
+
+		// Fetch all tracks
+		const allTracks: JellyfinItem[] = [];
+		let startIndex = 0;
+		const limit = 500;
+		let hasMore = true;
+
+		while (hasMore) {
+			const res = await this.getLibraryTracks(libraryId, { limit, startIndex });
+			allTracks.push(...res.Items);
+			startIndex += limit;
+			hasMore = res.Items.length === limit;
+		}
+
+		// Cache the result
+		this.tracksCache.set(libraryId, { data: allTracks, timestamp: Date.now() });
+
+		return allTracks;
+	}
+
+	clearCache(libraryId?: string) {
+		if (libraryId) {
+			this.tracksCache.delete(libraryId);
+		} else {
+			this.tracksCache.clear();
+		}
 	}
 
 	async getTrack(trackId: string): Promise<JellyfinItem> {

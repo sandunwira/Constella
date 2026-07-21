@@ -9,6 +9,7 @@
  *  - Jellyfin scrobbling hooks
  */
 
+import * as SecureStore from 'expo-secure-store';
 import {
 	setAudioModeAsync,
 	useAudioPlayer,
@@ -49,6 +50,7 @@ type AudioContextType = {
 	duration: number;
 	queue: Track[];
 	queueIndex: number;
+	queueName: string | null;
 	isShuffled: boolean;
 	repeatMode: RepeatMode;
 	crossfadeSecs: number;
@@ -56,7 +58,7 @@ type AudioContextType = {
 	volume: number;
 
 	// Playback controls
-	playTrack: (track: Track, newQueue?: Track[]) => Promise<void>;
+	playTrack: (track: Track, newQueue?: Track[], sourceName?: string) => Promise<void>;
 	togglePlayPause: () => Promise<void>;
 	seekTo: (ms: number) => Promise<void>;
 	skipNext: () => Promise<void>;
@@ -86,6 +88,9 @@ const AudioContext = createContext<AudioContextType | null>(null);
 
 // ── Provider ──────────────────────────────────────────────────────────────
 
+const STORE_KEY_SHUFFLE = 'constella_audio_shuffle';
+const STORE_KEY_REPEAT = 'constella_audio_repeat';
+
 export function AudioProvider({ children }: { children: React.ReactNode }) {
 	const player = useAudioPlayer(null);
 	const status = useAudioPlayerStatus(player);
@@ -93,14 +98,16 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 	const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
 	const [queue, setQueue] = useState<Track[]>([]);
 	const [queueIndex, setQueueIndex] = useState(-1);
+	const [queueName, setQueueName] = useState<string | null>(null);
 	const [isShuffled, setIsShuffled] = useState(false);
 	const [repeatMode, setRepeatMode] = useState<RepeatMode>('none');
 	const [crossfadeSecs, setCrossfadeSecs] = useState(0);
 	const [isPlayerOpen, setIsPlayerOpen] = useState(false);
 	const [volume, setVolumeState] = useState(0.8);
 
-	// Shuffle order mapping: shuffledQueue[i] = original queue[i]
-	const shuffledOrderRef = useRef<number[]>([]);
+	// Original unshuffled tracklist (alphabetical as received from source)
+	// Used as the source of truth for shuffle on/off toggling
+	const originalQueueRef = useRef<Track[]>([]);
 
 	// ── Boot: enable background audio + lock screen controls ─────────────────
 
@@ -110,6 +117,20 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 			shouldPlayInBackground: true,
 			interruptionMode: 'duckOthers',
 		});
+
+		// Restore persisted shuffle/repeat settings
+		(async () => {
+			try {
+				const [savedShuffle, savedRepeat] = await Promise.all([
+					SecureStore.getItemAsync(STORE_KEY_SHUFFLE),
+					SecureStore.getItemAsync(STORE_KEY_REPEAT),
+				]);
+				if (savedShuffle === 'true') setIsShuffled(true);
+				if (savedRepeat === 'one' || savedRepeat === 'all' || savedRepeat === 'none') {
+					setRepeatMode(savedRepeat as RepeatMode);
+				}
+			} catch { }
+		})();
 	}, []);
 
 	// ── Auto-advance on track end ────────────────────────────────────────────
@@ -157,36 +178,54 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 	// ── Public: playTrack ────────────────────────────────────────────────────
 
 	const playTrack = useCallback(
-		async (track: Track, newQueue?: Track[]) => {
-			let q = newQueue ?? queue;
-			let idx = q.findIndex((t) => t.id === track.id);
-
+		async (track: Track, newQueue?: Track[], sourceName?: string) => {
 			if (newQueue) {
-				// Replace entire queue
+				// Always store the full original (A-Z) tracklist
+				originalQueueRef.current = newQueue;
+
+				let q: Track[];
+				let idx: number;
+
 				if (isShuffled) {
-					const order = shuffle(q.length, idx);
-					shuffledOrderRef.current = order;
-					q = order.map((i) => newQueue[i]);
-					idx = 0; // track is now at front of shuffled list
+					// Shuffle from original: keep clicked track at front, shuffle the rest
+					const originalIdx = newQueue.findIndex((t) => t.id === track.id);
+					const before = newQueue.slice(0, originalIdx);
+					const after = newQueue.slice(originalIdx + 1);
+					const shuffledRest = fisherYates([...before, ...after]);
+					q = [track, ...shuffledRest];
+					idx = 0;
+				} else {
+					q = newQueue;
+					idx = newQueue.findIndex((t) => t.id === track.id);
+					if (idx === -1) {
+						q = [...newQueue, track];
+						idx = q.length - 1;
+					}
 				}
+
 				setQueue(q);
-				setQueueIndex(0);
-			}
-
-			if (idx === -1) {
-				// Track not in queue — add it and play
-				const updated = [...q, track];
-				setQueue(updated);
-				idx = updated.length - 1;
 				setQueueIndex(idx);
+				setQueueName(sourceName ?? null);
 				player.replace(track.uri);
+				player.play();
+				setCurrentTrack(track);
 			} else {
-				setQueueIndex(idx);
-				player.replace(track.uri);
-			}
+				// No new queue — play from existing queue
+				const idx = queue.findIndex((t) => t.id === track.id);
+				if (idx === -1) {
+					const updated = [...queue, track];
+					setQueue(updated);
+					setQueueIndex(updated.length - 1);
+					player.replace(track.uri);
+				} else {
+					setQueueIndex(idx);
+					player.replace(track.uri);
+				}
+				player.play();
+				setCurrentTrack(track);
 
-			player.play();
-			setCurrentTrack(track);
+				if (sourceName) setQueueName(sourceName);
+			}
 		},
 		[queue, isShuffled, player],
 	);
@@ -266,6 +305,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 	const clearQueue = useCallback(() => {
 		setQueue([]);
 		setQueueIndex(-1);
+		setQueueName(null);
+		originalQueueRef.current = [];
 		player.pause();
 		setCurrentTrack(null);
 	}, [player]);
@@ -291,24 +332,51 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 	const toggleShuffle = useCallback(() => {
 		setIsShuffled((prev) => {
 			const next = !prev;
-			if (next && queue.length > 0) {
-				// Shuffle remaining tracks after current
-				const before = queue.slice(0, queueIndex + 1);
-				const after = queue.slice(queueIndex + 1);
-				const shuffled = fisherYates(after);
-				setQueue([...before, ...shuffled]);
+			SecureStore.setItemAsync(STORE_KEY_SHUFFLE, String(next)).catch(() => { });
+
+			const original = originalQueueRef.current;
+			if (original.length === 0) return next;
+
+			if (next) {
+				// Shuffle ON: shuffle the full original queue, keep current track at front
+				const currentId = currentTrack?.id;
+				const currentOriginalIdx = currentId
+					? original.findIndex((t) => t.id === currentId)
+					: -1;
+
+				let rest: Track[];
+				if (currentOriginalIdx >= 0) {
+					// Remove current track from pool, shuffle the rest
+					const without = [...original.slice(0, currentOriginalIdx), ...original.slice(currentOriginalIdx + 1)];
+					rest = fisherYates(without);
+				} else {
+					rest = fisherYates([...original]);
+				}
+
+				const shuffled = currentId ? [original[currentOriginalIdx], ...rest] : rest;
+				setQueue(shuffled);
+				setQueueIndex(0);
+			} else {
+				// Shuffle OFF: restore original A-Z order, find current track position
+				const currentId = currentTrack?.id;
+				const idx = currentId
+					? original.findIndex((t) => t.id === currentId)
+					: 0;
+				setQueue([...original]);
+				setQueueIndex(idx >= 0 ? idx : 0);
 			}
+
 			return next;
 		});
-	}, [queue, queueIndex]);
+	}, [currentTrack]);
 
 	// ── Repeat ────────────────────────────────────────────────────────────────
 
 	const cycleRepeat = useCallback(() => {
 		setRepeatMode((r) => {
-			if (r === 'none') return 'all';
-			if (r === 'all') return 'one';
-			return 'none';
+			const next = r === 'none' ? 'all' : r === 'all' ? 'one' : 'none';
+			SecureStore.setItemAsync(STORE_KEY_REPEAT, next).catch(() => { });
+			return next;
 		});
 	}, []);
 
@@ -338,6 +406,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 				duration: status.duration * 1000,
 				queue,
 				queueIndex,
+				queueName,
 				isShuffled,
 				repeatMode,
 				crossfadeSecs,
@@ -382,12 +451,4 @@ function fisherYates<T>(arr: T[]): T[] {
 		[a[i], a[j]] = [a[j], a[i]];
 	}
 	return a;
-}
-
-function shuffle(length: number, keepFirst: number): number[] {
-	const indices = Array.from({ length }, (_, i) => i);
-	// Move keepFirst to front
-	indices.splice(keepFirst, 1);
-	const rest = fisherYates(indices);
-	return [keepFirst, ...rest];
 }

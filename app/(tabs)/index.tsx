@@ -11,7 +11,6 @@ import {
 	Pressable,
 	RefreshControl,
 	ScrollView,
-	StyleSheet,
 	Text,
 	View,
 } from 'react-native';
@@ -22,7 +21,6 @@ import { FeaturedCard } from '@/components/featured-card';
 import { NowPlayingBar } from '@/components/mini-player';
 import { SectionHeader } from '@/components/ui/section-header';
 
-import { Colors } from '@/constants/colors';
 import { useAudio, type Track } from '@/contexts/audio-context';
 import { useJellyfin } from '@/contexts/jellyfin-context';
 import { jellyfinClient } from '@/lib/jellyfin/client';
@@ -86,29 +84,31 @@ export default function HomeScreen() {
 	const handlePlayTrack = useCallback((item: JellyfinItem) => {
 		if (!server) return;
 		const track = jellyfinToTrack(item, server.url, server.accessToken);
-		playTrack(track);
-	}, [server, playTrack]);
+		const trackList = recentTracks.map((t) => jellyfinToTrack(t, server.url, server.accessToken));
+		playTrack(track, trackList, 'Recently Played');
+	}, [server, playTrack, recentTracks]);
 
 	return (
-		<View style={styles.bg}>
-
-			<SafeAreaView style={styles.safe} edges={['top']}>
+		<View className="flex-1 bg-canvas">
+			<SafeAreaView className="flex-1" edges={['top']}>
 				<ScrollView
 					showsVerticalScrollIndicator={false}
-					contentContainerStyle={styles.scroll}
+					contentContainerStyle={{ paddingTop: 12 }}
 					refreshControl={
 						<RefreshControl
 							refreshing={refreshing}
 							onRefresh={onRefresh}
-							tintColor={Colors.text.primary}
+							tintColor="#FFFFFF"
 						/>
 					}>
 
 					{/* ── Header ────────────────────────────────────────────── */}
-					<View style={styles.header}>
+					<View className="px-5 pb-6 pt-1">
 						<View>
-							<Text style={styles.greeting}>{getGreeting()}</Text>
-							<Text style={styles.username}>
+							<Text className="text-ink-muted text-caption font-medium uppercase">
+								{getGreeting()}
+							</Text>
+							<Text className="text-ink text-display-md font-medium mt-1">
 								{server?.username ?? 'Constella'}
 							</Text>
 						</View>
@@ -116,22 +116,22 @@ export default function HomeScreen() {
 
 					{/* ── Not connected banner ───────────────────────────────── */}
 					{!isConnected && (
-						<View style={styles.banner}>
-							<Text style={styles.bannerText}>
+						<View className="mx-5 mb-6 p-[18px] rounded-lg bg-surface-1 border border-hairline/50">
+							<Text className="text-ink-muted text-body-sm leading-5">
 								Connect a Jellyfin server in Settings to start listening.
 							</Text>
 						</View>
 					)}
 
 					{/* ── Featured Picks ─────────────────────────────────────── */}
-					<View style={styles.section}>
+					<View className="mb-9">
 						<SectionHeader title="Featured Picks" />
 						<FlatList
 							horizontal
 							showsHorizontalScrollIndicator={false}
 							data={FEATURED_CARDS}
 							keyExtractor={(item) => item.id}
-							contentContainerStyle={styles.hPad}
+							contentContainerStyle={{ paddingHorizontal: 16, gap: 14 }}
 							renderItem={({ item }) => (
 								<FeaturedCard
 									label={item.label}
@@ -147,14 +147,14 @@ export default function HomeScreen() {
 
 					{/* ── Recently Added Albums ──────────────────────────────── */}
 					{recentAlbums.length > 0 && (
-						<View style={styles.section}>
+						<View className="mb-9">
 							<SectionHeader title="Recently Added" />
 							<FlatList
 								horizontal
 								showsHorizontalScrollIndicator={false}
 								data={recentAlbums}
 								keyExtractor={(item) => item.Id}
-								contentContainerStyle={styles.hPad}
+								contentContainerStyle={{ paddingHorizontal: 16, gap: 14 }}
 								renderItem={({ item }) => (
 									<AlbumCard
 										id={item.Id}
@@ -175,14 +175,14 @@ export default function HomeScreen() {
 
 					{/* ── Listen Again ────────────────────────────────────────── */}
 					{recentTracks.length > 0 && (
-						<View style={styles.section}>
+						<View className="mb-9">
 							<SectionHeader title="Listen Again" subtitle="Recently played tracks" />
 							<FlatList
 								horizontal
 								showsHorizontalScrollIndicator={false}
 								data={recentTracks.slice(0, 10)}
 								keyExtractor={(item) => item.Id}
-								contentContainerStyle={styles.laPad}
+								contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
 								snapToInterval={292}
 								decelerationRate="fast"
 								renderItem={({ item }) => {
@@ -190,39 +190,32 @@ export default function HomeScreen() {
 									return (
 										<Pressable
 											onPress={() => handlePlayTrack(item)}
-											className="flex-row items-center gap-4 rounded-[20px] bg-card border border-border w-[280px]"
+											className="flex-row items-center gap-4 rounded-xl bg-surface-1 w-[280px] p-4 overflow-hidden"
 											style={({ pressed }) => ({
-												padding: 16,
-												...(pressed && {
-													backgroundColor: Colors.background.elevated,
-													borderColor: Colors.border.light,
-												}),
-												...(isActive && {
-													borderColor: Colors.text.primary,
-												}),
+												backgroundColor: pressed ? '#2C2C2E' : '#1A1A1C',
+												...(isActive && { borderWidth: 1, borderColor: '#FFFFFF' }),
 											})}>
-											<View className="w-[72px] h-[72px] rounded-[14px] overflow-hidden bg-ink-700">
+											<View className="w-[72px] h-[72px] rounded-[12px] overflow-hidden bg-surface-2">
 												{item.ImageTags?.Primary ? (
 													<Image
 														source={{ uri: jellyfinClient.getImageUrl(item.Id) }}
-														style={{ width: 72, height: 72, borderRadius: 14 }}
+														style={{ width: 72, height: 72 }}
 														contentFit="cover"
 														transition={200}
 													/>
 												) : (
 													<View className="w-full h-full items-center justify-center">
-														<Ionicons name="musical-note" size={24} color={Colors.text.tertiary} />
+														<Ionicons name="musical-note" size={24} color="#999999" />
 													</View>
 												)}
 											</View>
 											<View className="flex-1 gap-1 justify-center">
 												<Text
-													className="text-white text-[15px] font-semibold"
-													numberOfLines={2}
-													style={{ letterSpacing: -0.3, lineHeight: 20 }}>
+													className="text-ink text-body font-medium"
+													numberOfLines={2}>
 													{item.Name}
 												</Text>
-												<Text className="text-muted text-xs" numberOfLines={1}>
+												<Text className="text-ink-muted text-xs" numberOfLines={1}>
 													{item.Artists?.[0] ?? item.AlbumArtist ?? 'Unknown'}
 												</Text>
 											</View>
@@ -234,7 +227,7 @@ export default function HomeScreen() {
 					)}
 
 					{/* Bottom padding for NowPlayingBar + TabBar */}
-					<View style={{ height: 170 }} />
+					<View className="h-[170px]" />
 				</ScrollView>
 
 				<NowPlayingBar />
@@ -242,8 +235,6 @@ export default function HomeScreen() {
 		</View>
 	);
 }
-
-// ── Static featured cards data ─────────────────────────────────────────────
 
 const FEATURED_CARDS = [
 	{
@@ -259,54 +250,3 @@ const FEATURED_CARDS = [
 		subtitle: 'Tracks you keep coming back to',
 	},
 ];
-
-const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: Colors.background.primary },
-	safe: { flex: 1 },
-	scroll: { paddingTop: 12 },
-	header: {
-		paddingHorizontal: 20,
-		paddingBottom: 24,
-		paddingTop: 4,
-	},
-	greeting: {
-		color: Colors.text.secondary,
-		fontSize: 13,
-		fontWeight: '500',
-		letterSpacing: 0.3,
-		textTransform: 'uppercase',
-	},
-	username: {
-		color: Colors.text.primary,
-		fontSize: 30,
-		fontWeight: '800',
-		letterSpacing: -1,
-		marginTop: 4,
-	},
-	section: {
-		marginBottom: 36,
-	},
-	hPad: {
-		paddingHorizontal: 16,
-		gap: 14,
-	},
-	banner: {
-		marginHorizontal: 20,
-		marginBottom: 24,
-		padding: 18,
-		borderRadius: 14,
-		backgroundColor: Colors.background.card,
-		borderWidth: 1,
-		borderColor: Colors.border.subtle,
-	},
-	bannerText: {
-		color: Colors.text.secondary,
-		fontSize: 14,
-		lineHeight: 20,
-	},
-
-	laPad: {
-		paddingHorizontal: 16,
-		gap: 12,
-	},
-});

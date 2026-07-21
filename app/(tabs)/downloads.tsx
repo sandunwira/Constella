@@ -15,48 +15,49 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NowPlayingBar } from '@/components/mini-player';
-import { Colors } from '@/constants/colors';
-import { useAudio } from '@/contexts/audio-context';
 
-// Simulated download record type
 type DownloadItem = {
 	id: string;
 	title: string;
 	artist: string;
 	artwork?: string;
 	status: 'complete' | 'downloading' | 'pending';
-	progress?: number;    // 0–1
+	progress?: number;
 	fileSizeMB?: number;
 };
 
-// For demo/offline usage — real data comes from SQLite downloads table
 const MOCK_DOWNLOADS: DownloadItem[] = [];
 
 type FilterTab = 'All' | 'Albums' | 'Tracks';
 const FILTER_TABS: FilterTab[] = ['All', 'Albums', 'Tracks'];
 
+const TIPS = [
+	{ icon: 'hand-left-outline', text: 'Long-press any track to download' },
+	{ icon: 'albums-outline', text: 'Download entire albums at once' },
+	{ icon: 'wifi-outline', text: 'Downloaded tracks play without Wi-Fi' },
+];
+
 export default function DownloadsScreen() {
 	const [filter, setFilter] = useState<FilterTab>('All');
-	const { playTrack } = useAudio();
 
 	const renderEmpty = () => (
-		<View style={styles.emptyState}>
-			<View style={styles.emptyIconBg}>
-				<Ionicons name="cloud-download-outline" size={40} color={Colors.text.tertiary} />
+		<View className="flex-1 items-center justify-center p-8 gap-5">
+			<View className="w-[88px] h-[88px] rounded-full bg-surface-1 border border-hairline/50 items-center justify-center mb-1">
+				<Ionicons name="cloud-download-outline" size={40} color="#999999" />
 			</View>
-			<Text style={styles.emptyTitle}>No Downloads Yet</Text>
-			<Text style={styles.emptyText}>
+			<Text className="text-ink text-headline font-medium">No Downloads Yet</Text>
+			<Text className="text-ink-muted text-body-sm text-center leading-5 max-w-[300px]">
 				Long-press any track or album in Collections to download it for offline listening.
 			</Text>
 
 			{/* Tips */}
-			<View style={styles.tips}>
+			<View className="w-full mt-1 gap-2.5">
 				{TIPS.map((tip) => (
-					<View key={tip.icon} style={styles.tipRow}>
-						<View style={styles.tipIconBg}>
-							<Ionicons name={tip.icon as any} size={16} color={Colors.text.tertiary} />
+					<View key={tip.icon} className="flex-row items-center gap-3 bg-surface-1 rounded-lg p-[14px] border border-hairline/50">
+						<View className="w-[34px] h-[34px] rounded-md bg-surface-2 items-center justify-center">
+							<Ionicons name={tip.icon as any} size={16} color="#999999" />
 						</View>
-						<Text style={styles.tipText}>{tip.text}</Text>
+						<Text className="text-ink-muted text-caption flex-1">{tip.text}</Text>
 					</View>
 				))}
 			</View>
@@ -64,9 +65,9 @@ export default function DownloadsScreen() {
 	);
 
 	const renderDownloadItem = ({ item }: { item: DownloadItem }) => (
-		<Pressable style={styles.downloadRow}>
+		<Pressable className="flex-row items-center px-4 py-[10px] gap-3">
 			{/* Artwork */}
-			<View style={styles.artwork}>
+			<View className="w-12 h-12 rounded-[10px] overflow-hidden bg-surface-2 items-center justify-center">
 				{item.artwork ? (
 					<Image
 						source={{ uri: item.artwork }}
@@ -74,23 +75,22 @@ export default function DownloadsScreen() {
 						contentFit="cover"
 					/>
 				) : (
-					<Ionicons name="musical-note" size={20} color={Colors.text.tertiary} />
+					<Ionicons name="musical-note" size={20} color="#999999" />
 				)}
-				{/* Downloaded badge */}
 				{item.status === 'complete' && (
-					<View style={styles.badge}>
-						<Ionicons name="checkmark" size={10} color="#fff" />
+					<View className="absolute bottom-[-2px] right-[-2px] w-4 h-4 rounded-full bg-primary items-center justify-center border-[1.5px] border-canvas">
+						<Ionicons name="checkmark" size={10} color="#000000" />
 					</View>
 				)}
 			</View>
 
 			{/* Info */}
-			<View style={styles.info}>
-				<Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
-				<Text style={styles.itemArtist} numberOfLines={1}>{item.artist}</Text>
+			<View className="flex-1 gap-[3px]">
+				<Text className="text-ink text-body-sm font-medium" numberOfLines={1}>{item.title}</Text>
+				<Text className="text-ink-muted text-xs" numberOfLines={1}>{item.artist}</Text>
 				{item.status === 'downloading' && item.progress !== undefined && (
-					<View style={styles.progressBar}>
-						<View style={[styles.progressFill, { width: `${item.progress * 100}%` }]} />
+					<View className="h-[3px] bg-surface-2 rounded-sm overflow-hidden mt-1">
+						<View className="h-[3px] bg-primary rounded-sm" style={{ width: `${item.progress * 100}%` }} />
 					</View>
 				)}
 			</View>
@@ -98,42 +98,42 @@ export default function DownloadsScreen() {
 			{/* Status */}
 			<View>
 				{item.status === 'downloading' ? (
-					<Text style={styles.progressText}>
+					<Text className="text-ink text-xs font-medium">
 						{Math.round((item.progress ?? 0) * 100)}%
 					</Text>
 				) : item.status === 'complete' ? (
-					<Text style={styles.sizeText}>{item.fileSizeMB?.toFixed(1)} MB</Text>
+					<Text className="text-ink-muted text-2xs">{item.fileSizeMB?.toFixed(1)} MB</Text>
 				) : (
-					<Ionicons name="time-outline" size={18} color={Colors.text.tertiary} />
+					<Ionicons name="time-outline" size={18} color="#999999" />
 				)}
 			</View>
 
-			<Pressable hitSlop={10} style={styles.moreBtn}>
-				<Ionicons name="ellipsis-horizontal" size={18} color={Colors.text.tertiary} />
+			<Pressable hitSlop={10} className="p-1">
+				<Ionicons name="ellipsis-horizontal" size={18} color="#999999" />
 			</Pressable>
 		</Pressable>
 	);
 
 	return (
-		<View style={styles.bg}>
-			<SafeAreaView style={styles.safe} edges={['top']}>
+		<View className="flex-1 bg-canvas">
+			<SafeAreaView className="flex-1" edges={['top']}>
 				{/* ── Header ────────────────────────────────────────────── */}
-				<View style={styles.header}>
-					<Text style={styles.title}>Downloads</Text>
-					<Pressable style={styles.storageBtn}>
-						<Ionicons name="folder-outline" size={18} color={Colors.text.tertiary} />
-						<Text style={styles.storageText}>0 MB used</Text>
+				<View className="flex-row items-center justify-between px-5 pt-1 pb-[18px]">
+					<Text className="text-ink text-display-md font-medium">Downloads</Text>
+					<Pressable className="flex-row items-center gap-[6px] px-3 py-2 rounded-lg bg-surface-1 border border-hairline/50">
+						<Ionicons name="folder-outline" size={18} color="#999999" />
+						<Text className="text-ink-muted text-xs font-medium">0 MB used</Text>
 					</Pressable>
 				</View>
 
 				{/* ── Filter Tabs ────────────────────────────────────────── */}
-				<View style={styles.tabsRow}>
+				<View className="flex-row px-4 gap-2 mb-[14px]">
 					{FILTER_TABS.map((tab) => (
 						<Pressable
 							key={tab}
 							onPress={() => setFilter(tab)}
-							style={[styles.tabPill, filter === tab && styles.tabPillActive]}>
-							<Text style={[styles.tabText, filter === tab && styles.tabTextActive]}>
+							className={`px-[18px] py-2 rounded-pill ${filter === tab ? 'bg-primary' : 'bg-surface-1 border border-hairline/50'}`}>
+							<Text className={`text-caption font-medium ${filter === tab ? 'text-on-primary' : 'text-ink-muted'}`}>
 								{tab}
 							</Text>
 						</Pressable>
@@ -141,16 +141,15 @@ export default function DownloadsScreen() {
 				</View>
 
 				{/* ── Auto-Cache Banner ──────────────────────────────────── */}
-				<View style={styles.autoCacheBanner}>
-					<View style={styles.autoCacheLeft}>
-						<Ionicons name="sparkles" size={18} color={Colors.text.tertiary} />
+				<View className="mx-4 mb-[18px] p-[14px] rounded-lg bg-surface-1 border border-hairline/50 flex-row items-center justify-between">
+					<View className="flex-row items-center gap-2.5">
+						<Ionicons name="sparkles" size={18} color="#999999" />
 						<View>
-							<Text style={styles.autoCacheTitle}>Smart Cache</Text>
-							<Text style={styles.autoCacheDesc}>Auto-download recently played</Text>
+							<Text className="text-ink text-body-sm font-medium">Smart Cache</Text>
+							<Text className="text-ink-muted text-xs">Auto-download recently played</Text>
 						</View>
 					</View>
-					{/* Toggle placeholder */}
-					<View style={styles.autoCacheToggle} />
+					<View className="w-[44px] h-[26px] rounded-[13px] bg-surface-2 border border-hairline/50" />
 				</View>
 
 				{/* ── Content ────────────────────────────────────────────── */}
@@ -159,8 +158,8 @@ export default function DownloadsScreen() {
 					keyExtractor={(i) => i.id}
 					renderItem={renderDownloadItem}
 					ListEmptyComponent={renderEmpty}
-					contentContainerStyle={styles.listContent}
-					ListFooterComponent={<View style={{ height: 180 }} />}
+					contentContainerStyle={{ flexGrow: 1 }}
+					ListFooterComponent={<View className="h-[180px]" />}
 				/>
 
 				<NowPlayingBar />
@@ -168,229 +167,3 @@ export default function DownloadsScreen() {
 		</View>
 	);
 }
-
-const TIPS = [
-	{ icon: 'hand-left-outline', text: 'Long-press any track to download' },
-	{ icon: 'albums-outline', text: 'Download entire albums at once' },
-	{ icon: 'wifi-outline', text: 'Downloaded tracks play without Wi-Fi' },
-];
-
-const styles = StyleSheet.create({
-	bg: { flex: 1, backgroundColor: Colors.background.primary },
-	safe: { flex: 1 },
-	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingHorizontal: 20,
-		paddingTop: 4,
-		paddingBottom: 18,
-	},
-	title: {
-		color: Colors.text.primary,
-		fontSize: 30,
-		fontWeight: '800',
-		letterSpacing: -1,
-	},
-	storageBtn: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 6,
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 12,
-		backgroundColor: Colors.background.card,
-		borderWidth: StyleSheet.hairlineWidth,
-		borderColor: Colors.border.subtle,
-	},
-	storageText: {
-		color: Colors.text.secondary,
-		fontSize: 12,
-		fontWeight: '500',
-	},
-	tabsRow: {
-		flexDirection: 'row',
-		paddingHorizontal: 16,
-		gap: 8,
-		marginBottom: 14,
-	},
-	tabPill: {
-		paddingHorizontal: 18,
-		paddingVertical: 8,
-		borderRadius: 99,
-		backgroundColor: Colors.background.card,
-		borderWidth: StyleSheet.hairlineWidth,
-		borderColor: Colors.border.subtle,
-	},
-	tabPillActive: {
-		backgroundColor: Colors.text.primary,
-	},
-	tabText: {
-		color: Colors.text.secondary,
-		fontSize: 13,
-		fontWeight: '600',
-	},
-	tabTextActive: { color: Colors.black },
-
-	autoCacheBanner: {
-		marginHorizontal: 16,
-		marginBottom: 18,
-		padding: 14,
-		borderRadius: 14,
-		backgroundColor: Colors.background.card,
-		borderWidth: StyleSheet.hairlineWidth,
-		borderColor: Colors.border.subtle,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-	},
-	autoCacheLeft: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 10,
-	},
-	autoCacheTitle: {
-		color: Colors.text.primary,
-		fontSize: 14,
-		fontWeight: '600',
-	},
-	autoCacheDesc: {
-		color: Colors.text.secondary,
-		fontSize: 12,
-	},
-	autoCacheToggle: {
-		width: 44,
-		height: 26,
-		borderRadius: 13,
-		backgroundColor: Colors.background.elevated,
-		borderWidth: StyleSheet.hairlineWidth,
-		borderColor: Colors.border.subtle,
-	},
-
-	listContent: { flexGrow: 1 },
-
-	downloadRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 16,
-		paddingVertical: 10,
-		gap: 12,
-	},
-	artwork: {
-		width: 48,
-		height: 48,
-		borderRadius: 10,
-		overflow: 'hidden',
-		backgroundColor: Colors.background.elevated,
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	badge: {
-		position: 'absolute',
-		bottom: -2,
-		right: -2,
-		width: 16,
-		height: 16,
-		borderRadius: 8,
-		backgroundColor: Colors.text.primary,
-		alignItems: 'center',
-		justifyContent: 'center',
-		borderWidth: 1.5,
-		borderColor: Colors.background.primary,
-	},
-	info: {
-		flex: 1,
-		gap: 3,
-	},
-	itemTitle: {
-		color: Colors.text.primary,
-		fontSize: 14,
-		fontWeight: '600',
-	},
-	itemArtist: {
-		color: Colors.text.secondary,
-		fontSize: 12,
-	},
-	progressBar: {
-		height: 3,
-		backgroundColor: Colors.background.elevated,
-		borderRadius: 2,
-		overflow: 'hidden',
-		marginTop: 4,
-	},
-	progressFill: {
-		height: 3,
-		backgroundColor: Colors.text.primary,
-		borderRadius: 2,
-	},
-	progressText: {
-		color: Colors.text.primary,
-		fontSize: 12,
-		fontWeight: '600',
-	},
-	sizeText: {
-		color: Colors.text.tertiary,
-		fontSize: 11,
-	},
-	moreBtn: { padding: 4 },
-
-	emptyState: {
-		flex: 1,
-		alignItems: 'center',
-		justifyContent: 'center',
-		padding: 32,
-		gap: 20,
-	},
-	emptyIconBg: {
-		width: 88,
-		height: 88,
-		borderRadius: 44,
-		backgroundColor: Colors.background.card,
-		borderWidth: 1,
-		borderColor: Colors.border.subtle,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginBottom: 4,
-	},
-	emptyTitle: {
-		color: Colors.text.primary,
-		fontSize: 22,
-		fontWeight: '800',
-		letterSpacing: -0.5,
-	},
-	emptyText: {
-		color: Colors.text.secondary,
-		fontSize: 14,
-		textAlign: 'center',
-		lineHeight: 20,
-		maxWidth: 300,
-	},
-	tips: {
-		width: '100%',
-		marginTop: 4,
-		gap: 10,
-	},
-	tipRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12,
-		backgroundColor: Colors.background.card,
-		borderRadius: 14,
-		padding: 14,
-		borderWidth: StyleSheet.hairlineWidth,
-		borderColor: Colors.border.subtle,
-	},
-	tipIconBg: {
-		width: 34,
-		height: 34,
-		borderRadius: 10,
-		backgroundColor: Colors.background.elevated,
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	tipText: {
-		color: Colors.text.secondary,
-		fontSize: 13,
-		flex: 1,
-	},
-});

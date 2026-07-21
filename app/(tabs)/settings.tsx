@@ -11,7 +11,6 @@ import {
 	Platform,
 	Pressable,
 	ScrollView,
-	StyleSheet,
 	Text,
 	TextInput,
 	View,
@@ -20,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NowPlayingBar } from '@/components/mini-player';
 import { LinkRow, ToggleRow } from '@/components/toggle-row';
-import { Colors } from '@/constants/colors';
+
 import { useAudio } from '@/contexts/audio-context';
 import { useJellyfin } from '@/contexts/jellyfin-context';
 
@@ -32,10 +31,10 @@ type SectionProps = {
 function Section({ title, children }: SectionProps) {
 	return (
 		<View className="mb-7">
-			<Text className="text-subtle text-[11px] font-bold tracking-widest uppercase px-5 mb-2.5">
+			<Text className="text-ink-muted text-2xs font-bold tracking-wider uppercase px-5 mb-2.5">
 				{title}
 			</Text>
-			<View className="bg-card rounded-[14px] mx-4 overflow-hidden border border-border">
+			<View className="bg-surface-1 rounded-lg mx-4 overflow-hidden">
 				{children}
 			</View>
 		</View>
@@ -43,7 +42,7 @@ function Section({ title, children }: SectionProps) {
 }
 
 function Divider() {
-	return <View className="h-px bg-border ml-[62px]" />;
+	return <View className="h-[0.5px] bg-hairline ml-[62px]" />;
 }
 
 export default function SettingsScreen() {
@@ -90,7 +89,7 @@ export default function SettingsScreen() {
 	};
 
 	return (
-		<View className="flex-1 bg-bg">
+		<View className="flex-1 bg-canvas">
 			<SafeAreaView className="flex-1" edges={['top']}>
 				<KeyboardAvoidingView
 					behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -101,7 +100,7 @@ export default function SettingsScreen() {
 
 						{/* ── Header ────────────────────────────────────────────── */}
 						<View className="px-5 pt-1 pb-6">
-							<Text className="text-white text-[30px] font-extrabold" style={{ letterSpacing: -1 }}>
+							<Text className="text-ink text-display-md font-medium">
 								Settings
 							</Text>
 						</View>
@@ -112,23 +111,22 @@ export default function SettingsScreen() {
 								<>
 									{/* Connected state */}
 									<View className="flex-row items-center p-4 gap-3">
-										<View className="w-2 h-2 rounded-full bg-white" />
+										<View className="w-2 h-2 rounded-full bg-semantic-success" />
 										<View className="flex-1 gap-0.5">
-											<Text className="text-white text-[11px] font-semibold tracking-wider uppercase">
+											<Text className="text-ink text-2xs font-semibold tracking-wider uppercase">
 												Connected
 											</Text>
-											<Text className="text-white text-[14px] font-medium" numberOfLines={1}>
+											<Text className="text-ink text-body-sm" numberOfLines={1}>
 												{server?.url}
 											</Text>
-											<Text className="text-muted text-xs">
+											<Text className="text-ink-muted text-xs">
 												@{server?.username}
 											</Text>
 										</View>
 										<Pressable
 											onPress={handleDisconnect}
-											className="px-3.5 py-2 rounded-xl"
-											style={{ backgroundColor: 'rgba(239,68,68,0.12)', borderWidth: 1, borderColor: 'rgba(239,68,68,0.25)' }}>
-											<Text className="text-[#EF4444] text-[13px] font-semibold">Sign Out</Text>
+											className="px-[14px] py-2 rounded-pill bg-red-500/10">
+											<Text className="text-red-500 text-caption font-medium">Sign Out</Text>
 										</Pressable>
 									</View>
 								</>
@@ -138,72 +136,72 @@ export default function SettingsScreen() {
 										<Pressable
 											onPress={() => setShowConnect(true)}
 											className="flex-row items-center gap-2.5 p-4">
-											<Ionicons name="server-outline" size={20} color="#636366" />
-											<Text className="flex-1 text-white text-[15px] font-medium">
+											<Ionicons name="server-outline" size={20} color="#999999" />
+											<Text className="flex-1 text-ink text-body font-medium">
 												Connect to Jellyfin Server
 											</Text>
-											<Ionicons name="add-circle" size={20} color="#636366" />
+											<Ionicons name="add-circle" size={20} color="#999999" />
 										</Pressable>
 									) : (
 										<View className="p-4 gap-2.5">
-											<Text className="text-muted text-xs font-semibold tracking-wider">
+											<Text className="text-ink-muted text-xs font-semibold tracking-wider">
 												Server URL
 											</Text>
 											<TextInput
 												value={serverUrl}
 												onChangeText={setServerUrl}
 												placeholder="https://your-server.com"
-												placeholderTextColor="#636366"
-												className="bg-ink-700 rounded-xl px-3.5 py-3 text-white text-[15px] border border-border"
+												placeholderTextColor="#999999"
+												className="bg-surface-2 rounded-md px-[14px] py-3 text-ink text-body"
 												autoCapitalize="none"
 												autoCorrect={false}
 												keyboardType="url"
 											/>
 
-											<Text className="text-muted text-xs font-semibold tracking-wider">
+											<Text className="text-ink-muted text-xs font-semibold tracking-wider">
 												Username
 											</Text>
 											<TextInput
 												value={username}
 												onChangeText={setUsername}
 												placeholder="your username"
-												placeholderTextColor="#636366"
-												className="bg-ink-700 rounded-xl px-3.5 py-3 text-white text-[15px] border border-border"
+												placeholderTextColor="#999999"
+												className="bg-surface-2 rounded-md px-[14px] py-3 text-ink text-body"
 												autoCapitalize="none"
 											/>
 
-											<Text className="text-muted text-xs font-semibold tracking-wider">
+											<Text className="text-ink-muted text-xs font-semibold tracking-wider">
 												Password
 											</Text>
 											<TextInput
 												value={password}
 												onChangeText={setPassword}
 												placeholder="••••••••"
-												placeholderTextColor="#636366"
-												className="bg-ink-700 rounded-xl px-3.5 py-3 text-white text-[15px] border border-border"
+												placeholderTextColor="#999999"
+												className="bg-surface-2 rounded-md px-[14px] py-3 text-ink text-body"
 												secureTextEntry
 											/>
 
 											{connectionError && (
-												<Text className="text-[#EF4444] text-[13px] mt-1">{connectionError}</Text>
+												<Text className="text-red-500 text-caption mt-1">{connectionError}</Text>
 											)}
 
 											<View className="flex-row gap-2.5 mt-3">
 												<Pressable
 													onPress={() => { setShowConnect(false); setPassword(''); }}
-													className="flex-1 py-3.5 rounded-[14px] bg-card items-center border border-border">
-													<Text className="text-muted font-semibold text-[15px]">Cancel</Text>
+													className="flex-1 py-3.5 rounded-pill bg-surface-2 items-center justify-center min-h-[48px]">
+													<Text className="text-ink-muted font-semibold text-body">Cancel</Text>
 												</Pressable>
 
 												<Pressable
 													onPress={handleConnect}
-													className="flex-[2] py-3.5 rounded-[14px] bg-white items-center justify-center min-h-[48px]"
+													className="flex-[2] py-3.5 rounded-pill bg-primary items-center justify-center min-h-[48px]"
 													style={{ opacity: connecting ? 0.6 : 1 }}
 													disabled={connecting}>
 													{connecting ? (
-														<ActivityIndicator color="#000" size="small" />
+														<ActivityIndicator color="#000000" size="small" />
 													) : (
-														<Text className="text-black font-bold text-[15px]">Connect</Text>
+														<Text className="text-on-primary font-bold text-body">Connect</Text>
 													)}
 												</Pressable>
 											</View>
@@ -233,7 +231,6 @@ export default function SettingsScreen() {
 							<Divider />
 							<LinkRow
 								icon="git-merge"
-								iconColor="#A1A1A6"
 								label="Crossfade"
 								value={crossfadeSecs === 0 ? 'Off' : `${crossfadeSecs}s`}
 								onPress={() => {
@@ -244,7 +241,6 @@ export default function SettingsScreen() {
 							<Divider />
 							<LinkRow
 								icon="cellular"
-								iconColor="#A1A1A6"
 								label="Streaming Quality"
 								value="Original"
 								onPress={() => { }}
@@ -255,7 +251,6 @@ export default function SettingsScreen() {
 						<Section title="Library">
 							<ToggleRow
 								icon="image"
-								iconColor="#A1A1A6"
 								label="High-Quality Artwork"
 								description="Downloads larger cover images"
 								value={hqArt}
@@ -264,7 +259,6 @@ export default function SettingsScreen() {
 							<Divider />
 							<LinkRow
 								icon="sync"
-								iconColor="#A1A1A6"
 								label="Sync Library"
 								onPress={() => { }}
 								showChevron={false}
@@ -287,7 +281,7 @@ export default function SettingsScreen() {
 							/>
 						</Section>
 
-						<View style={{ height: 180 }} />
+						<View className="h-[180px]" />
 					</ScrollView>
 				</KeyboardAvoidingView>
 

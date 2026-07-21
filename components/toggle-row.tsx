@@ -27,16 +27,16 @@ type LinkRowProps = {
 };
 
 export function ToggleRow({ icon, iconColor, label, description, value, onToggle }: ToggleRowProps) {
-	const color = iconColor ?? '#A1A1A6';
+	const color = iconColor ?? '#999999';
 
 	return (
-		<View className="flex-row items-center px-4 py-3.5 gap-3">
-			<View className="w-[34px] h-[34px] rounded-[10px] bg-ink-700 items-center justify-center">
+		<View className="flex-row items-center px-4 py-[14px] gap-3">
+			<View className="w-[34px] h-[34px] rounded-md bg-surface-2 items-center justify-center">
 				<Ionicons name={icon} size={18} color={color} />
 			</View>
 			<View className="flex-1 gap-0.5">
-				<Text className="text-white text-[15px] font-medium">{label}</Text>
-				{description && <Text className="text-muted text-xs">{description}</Text>}
+				<Text className="text-ink text-body font-medium">{label}</Text>
+				{description && <Text className="text-ink-muted text-xs">{description}</Text>}
 			</View>
 			<Switch
 				value={value}
@@ -49,20 +49,20 @@ export function ToggleRow({ icon, iconColor, label, description, value, onToggle
 }
 
 export function LinkRow({ icon, iconColor, label, value, onPress, showChevron = true }: LinkRowProps) {
-	const color = iconColor ?? '#A1A1A6';
+	const color = iconColor ?? '#999999';
 
 	return (
 		<Pressable
 			onPress={onPress}
-			className="flex-row items-center px-4 py-3.5 gap-3"
-			style={({ pressed }) => pressed && { backgroundColor: '#1C1C1E' }}>
-			<View className="w-[34px] h-[34px] rounded-[10px] bg-ink-700 items-center justify-center">
+			className="flex-row items-center px-4 py-[14px] gap-3"
+			style={({ pressed }) => pressed && { backgroundColor: '#1A1A1C' }}>
+			<View className="w-[34px] h-[34px] rounded-md bg-surface-2 items-center justify-center">
 				<Ionicons name={icon} size={18} color={color} />
 			</View>
-			<Text className="flex-1 text-white text-[15px] font-medium">{label}</Text>
-			{value && <Text className="text-muted text-[14px] font-medium mr-1">{value}</Text>}
+			<Text className="flex-1 text-ink text-body font-medium">{label}</Text>
+			{value && <Text className="text-ink-muted text-body-sm font-medium mr-1">{value}</Text>}
 			{showChevron && (
-				<Ionicons name="chevron-forward" size={16} color="#636366" />
+				<Ionicons name="chevron-forward" size={16} color="#999999" />
 			)}
 		</Pressable>
 	);

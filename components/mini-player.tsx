@@ -38,12 +38,12 @@ export function NowPlayingBar() {
 				style={StyleSheet.absoluteFill}
 			/>
 			{/* Progress bar */}
-			<View className="h-0.5 absolute top-0 left-0 right-0 z-10" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-				<View className="h-0.5 bg-white" style={{ width: `${progress * 100}%` }} />
+			<View className="h-[1px] absolute top-0 left-0 right-0 z-10 bg-hairline">
+				<View className="h-[1px] bg-primary" style={{ width: `${progress * 100}%` }} />
 			</View>
 
-			<Pressable onPress={handleOpen} className="flex-row items-center py-3 px-3.5 gap-3">
-				<View className="w-12 h-12 rounded-xl overflow-hidden bg-ink-700 items-center justify-center">
+			<Pressable onPress={handleOpen} className="flex-row items-center py-3 px-[14px] gap-3">
+				<View className="w-12 h-12 rounded-md overflow-hidden bg-surface-2 items-center justify-center">
 					{currentTrack.artwork ? (
 						<Image
 							source={{ uri: currentTrack.artwork }}
@@ -52,15 +52,15 @@ export function NowPlayingBar() {
 							transition={300}
 						/>
 					) : (
-						<Ionicons name="musical-note" size={20} color="#636366" />
+						<Ionicons name="musical-note" size={20} color="#999999" />
 					)}
 				</View>
 
 				<View className="flex-1 gap-1">
-					<Text className="text-white text-base font-semibold" numberOfLines={1} style={{ letterSpacing: -0.3 }}>
+					<Text className="text-ink text-body font-medium" numberOfLines={1}>
 						{currentTrack.title}
 					</Text>
-					<Text className="text-muted text-[13px]" numberOfLines={1}>
+					<Text className="text-ink-muted text-caption" numberOfLines={1}>
 						{currentTrack.artist}
 					</Text>
 				</View>

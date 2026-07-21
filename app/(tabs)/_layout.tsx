@@ -4,19 +4,20 @@ import { Platform, StyleSheet } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { TabIcon } from '@/components/ui/tab-icon';
+import { Colors } from '@/constants/colors';
 
 export default function TabLayout() {
 	return (
 		<Tabs
 			screenOptions={{
 				headerShown: false,
-				tabBarActiveTintColor: '#FFFFFF',
-				tabBarInactiveTintColor: '#636366',
+				tabBarActiveTintColor: Colors.brand.primary,
+				tabBarInactiveTintColor: Colors.text.inkMuted,
 				tabBarButton: HapticTab,
 				tabBarLabelStyle: {
 					fontSize: 10,
-					fontWeight: '600',
-					letterSpacing: 0.3,
+					fontWeight: '500',
+					letterSpacing: -0.1,
 					marginBottom: 2,
 				},
 				tabBarStyle: {

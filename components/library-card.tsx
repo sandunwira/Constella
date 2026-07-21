@@ -33,13 +33,15 @@ export function LibraryCard({ name, type, count, onPress }: Props) {
 	const icon = getLibraryIcon(type);
 
 	return (
-		<Pressable onPress={onPress} className="flex-row items-center p-3.5 rounded-[14px] bg-card gap-3.5">
-			<View className="w-[44px] h-[44px] rounded-xl bg-ink-700 items-center justify-center">
+		<Pressable
+			onPress={onPress}
+			className="flex-row items-center p-[15px] rounded-lg bg-surface-1 gap-[15px]">
+			<View className="w-[44px] h-[44px] rounded-md bg-surface-2 items-center justify-center">
 				<Ionicons name={icon} size={22} color="#FFFFFF" />
 			</View>
 
-			<Text className="flex-1 text-white text-[15px] font-semibold" numberOfLines={1}>{name}</Text>
-			<Ionicons name="chevron-forward" size={16} color="#636366" />
+			<Text className="flex-1 text-ink text-body font-medium" numberOfLines={1}>{name}</Text>
+			<Ionicons name="chevron-forward" size={16} color="#999999" />
 		</Pressable>
 	);
 }

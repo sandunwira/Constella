@@ -21,7 +21,7 @@ export function ArtistCard({ name, artwork, size = 110, onPress }: Props) {
 			style={{ width: size }}>
 			{/* Circle image */}
 			<View
-				className="overflow-hidden bg-card items-center justify-center"
+				className="overflow-hidden bg-surface-1 items-center justify-center"
 				style={{
 					width: size,
 					height: size,
@@ -40,11 +40,11 @@ export function ArtistCard({ name, artwork, size = 110, onPress }: Props) {
 						transition={300}
 					/>
 				) : (
-					<Text className="text-subtle text-[28px] opacity-40">♪</Text>
+					<Text className="text-ink-muted text-[28px] opacity-40">♪</Text>
 				)}
 			</View>
 			<Text
-				className="text-white text-xs font-semibold text-center px-1"
+				className="text-ink text-xs font-medium text-center px-1"
 				numberOfLines={2}
 				style={{ lineHeight: 16 }}>
 				{name}
