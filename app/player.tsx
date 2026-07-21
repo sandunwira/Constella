@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
 	Dimensions,
 	FlatList,
@@ -64,12 +64,18 @@ export default function PlayerScreen() {
 	const [isScrubbing, setIsScrubbing] = useState(false);
 	const [scrubValue, setScrubValue] = useState(0);
 	const scrubberWidth = useRef(0);
+	const pendingSeekRef = useRef<number | null>(null);
+	const durationRef = useRef(duration);
+	durationRef.current = duration;
 
 	const [isFavorited, setIsFavorited] = useState(false);
 	const [showQueue, setShowQueue] = useState(false);
 
 	const progress = duration > 0 ? position / duration : 0;
-	const displayPos = isScrubbing ? scrubValue : progress;
+	// Show scrub value while dragging OR while waiting for seek to land
+	const displayPos = isScrubbing || (pendingSeekRef.current !== null && Math.abs(progress - pendingSeekRef.current) > 0.02)
+		? scrubValue
+		: progress;
 
 	const handleClose = useCallback(() => { router.back(); }, []);
 	const handleToggle = useCallback(() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); togglePlayPause(); }, [togglePlayPause]);
@@ -84,6 +90,7 @@ export default function PlayerScreen() {
 			onStartShouldSetPanResponder: () => true,
 			onPanResponderGrant: (evt) => {
 				setIsScrubbing(true);
+				pendingSeekRef.current = null;
 				const ratio = Math.max(0, Math.min(1, evt.nativeEvent.locationX / scrubberWidth.current));
 				setScrubValue(ratio);
 			},
@@ -93,11 +100,23 @@ export default function PlayerScreen() {
 			},
 			onPanResponderRelease: (evt) => {
 				const ratio = Math.max(0, Math.min(1, evt.nativeEvent.locationX / scrubberWidth.current));
-				seekTo(ratio * duration);
+				pendingSeekRef.current = ratio;
+				setScrubValue(ratio);
 				setIsScrubbing(false);
+				seekTo(ratio * durationRef.current);
 			},
 		}),
 	).current;
+
+	// Clear pending seek once the player position catches up
+	useEffect(() => {
+		if (pendingSeekRef.current !== null) {
+			const targetPos = pendingSeekRef.current;
+			if (Math.abs(progress - targetPos) < 0.02 || progress === 0) {
+				pendingSeekRef.current = null;
+			}
+		}
+	}, [progress]);
 
 	const [repeatIcon, repeatColor] = REPEAT_ICONS[repeatMode];
 	const nextTrack = queue[queueIndex + 1];
@@ -219,23 +238,25 @@ export default function PlayerScreen() {
 						</View>
 
 						{/* Scrubber */}
-						<View className="mb-8">
+						<View className="mb-3">
 							<View
-								className="h-[3px] bg-surface-2 rounded-sm mb-2.5 relative"
 								onLayout={(e) => { scrubberWidth.current = e.nativeEvent.layout.width; }}
-								{...panResponder.panHandlers}>
-								<View
-									className="h-[3px] bg-ink rounded-sm absolute top-0 left-0"
-									style={{ width: `${displayPos * 100}%` }}
-								/>
-								<View
-									className="w-[13px] h-[13px] rounded-full bg-ink absolute top-[-5px]"
-									style={{
-										left: `${displayPos * 100}%`,
-										marginLeft: -6.5,
-										...(isScrubbing && { transform: [{ scale: 1.5 }] }),
-									}}
-								/>
+								{...panResponder.panHandlers}
+								style={{ paddingVertical: 16 }}>
+								<View className="h-[3px] bg-surface-2 rounded-sm relative">
+									<View
+										className="h-[3px] bg-ink rounded-sm absolute top-0 left-0"
+										style={{ width: `${displayPos * 100}%` }}
+									/>
+									<View
+										className="w-[13px] h-[13px] rounded-full bg-ink absolute top-[-5px]"
+										style={{
+											left: `${displayPos * 100}%`,
+											marginLeft: -6.5,
+											...(isScrubbing && { transform: [{ scale: 1.5 }] }),
+										}}
+									/>
+								</View>
 							</View>
 							<View className="flex-row justify-between">
 								<Text className="text-ink-muted text-2xs font-medium">{formatMs(isScrubbing ? scrubValue * duration : position)}</Text>
