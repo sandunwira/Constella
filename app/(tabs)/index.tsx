@@ -103,7 +103,7 @@ export default function HomeScreen() {
 					}>
 
 					{/* ── Header ────────────────────────────────────────────── */}
-					<View className="px-5 pb-6 pt-1">
+					<View className="px-5 pb-6 pt-1 flex-row items-center justify-between">
 						<View>
 							<Text className="text-ink-muted text-caption font-medium uppercase">
 								{getGreeting()}
@@ -112,6 +112,16 @@ export default function HomeScreen() {
 								{server?.username ?? 'Constella'}
 							</Text>
 						</View>
+						{server && (
+							<View className="w-[48px] h-[48px] rounded-full overflow-hidden bg-surface-1">
+								<Image
+									source={{ uri: jellyfinClient.getUserImageUrl(200) }}
+									style={{ width: 48, height: 48 }}
+									contentFit="cover"
+									transition={200}
+								/>
+							</View>
+						)}
 					</View>
 
 					{/* ── Not connected banner ───────────────────────────────── */}

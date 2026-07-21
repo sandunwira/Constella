@@ -349,6 +349,10 @@ export class JellyfinClient {
 		return `${this.baseUrl}/Items/${itemId}/Images/${imageType}?maxWidth=${size}&quality=90&api_key=${this.accessToken}`;
 	}
 
+	getUserImageUrl(size = 200): string {
+		return `${this.baseUrl}/Users/${this.userId}/Images/Primary?maxWidth=${size}&quality=90&api_key=${this.accessToken}`;
+	}
+
 	// ── Playback Reporting ────────────────────────────────────────────────────
 
 	async reportPlaybackStart(itemId: string, mediaSourceId: string): Promise<void> {
